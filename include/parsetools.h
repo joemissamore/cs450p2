@@ -13,9 +13,10 @@ struct command {
 };
 
 
-void strcpyarray(char * dest[], char * source[], int len);
+void strcpyarray(char ** dest, char * source[], int len);
 void printArray(char * c[], int len);
 void slicearray(char * dest[], char * source[], int from, int to);
+void printCommandStruct(struct command com);
 
 bool is_arg_delim(char * c);
 int split_cmd_line(char* line, char** list_to_populate); 

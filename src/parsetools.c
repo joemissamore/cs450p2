@@ -29,8 +29,7 @@ int split_cmd_line(char* line, char** list_to_populate) {
 
 bool is_arg_delim(char * w) {
     if (strcmp(w, "|") == 0 ||
-            strcmp(w, "<") == 0 || 
-            // strcmp(w, "<<") == 0 ||
+            strcmp(w, "<") == 0 ||
             strcmp(w, ">") == 0 || 
             strcmp(w, ">>") == 0) {
                 return true;
@@ -40,38 +39,39 @@ bool is_arg_delim(char * w) {
 
 void parse(char ** line_words, int num_words) 
 {
+    // char ** line_words: The entire string of commands
 
+    // number of commands
+    // ls -la | grep -a file.txt > output.txt
+    // num_commands should = 3
     int num_commands = 0;
+    // command length
+    // grep -a file.txt
+    // should return = 3
     int command_len = 0;
+
+    // array of commands
     struct command commands[100];
     
     int i = 0;
+    // Go through all the 'tokens'
     for (; i < num_words; i++) {
+        // Capturing the 'token'
         char * w = line_words[i];
-            printf("w: %s\n", w);
-            if (is_arg_delim(w)) {
-                char * temp[command_len];
-                slicearray(temp, line_words, i - command_len, i - 1);
-                // command_len++;
-                commands[num_commands].command_length = command_len;
-                commands[num_commands].command_string = temp;
-                commands[num_commands].redirection = w;
-                
-                
-
-                
-                // DEBUG
-                printf("DEBUG\n");
-                // printf("command_len: %d\n", command_len);
-                // printf("i: %d\n", i);
-                // printf("command: \n");
-                // printArray(temp, command_len);
-                printArray(commands[num_commands].command_string, commands[num_commands].command_length);
-                // printf("redirection: %s\n", commands[num_commands].redirection);
-
-                num_commands++;
-                command_len = 0;
+        
+        // If it sees a redirect we will capture the 
+        // entire command. 
+        if (is_arg_delim(w)) {
+            char ** temp = (char **) malloc(sizeof(command_len + 1));
+            slicearray(temp, line_words, i - command_len, i - 1);
+            commands[num_commands].command_length = command_len;
+            commands[num_commands].command_string = temp;
+            commands[num_commands].redirection = w;
+       
+            num_commands++;
+            command_len = 0;
         }
+        // if its not a delimiter (<, >, ...) 
         else {
             command_len++;
         }
@@ -80,15 +80,19 @@ void parse(char ** line_words, int num_words)
     // i at this point is at the end of the array (out of bounds)
     // needs to be adjusted back to the end of the array (in bounds)
     i--; // need to back i up
-    char * temp[command_len];
+
+    // Allocating space for the double pointer
+    // +1 indicates space for the null terminator
+    char ** temp = (char **) malloc(sizeof(command_len + 1));
+    
     slicearray(temp, line_words, i - command_len + 1, i);
     commands[num_commands].command_string = temp;
     commands[num_commands].command_length = command_len;
     commands[num_commands].redirection = NULL;
     
-    // DEBUG
-    printf("num_commands: %d\n", num_commands);
-    printArray(commands[num_commands].command_string, commands[num_commands].command_length);
+    // printf("printing the last command...\n");
+    // printArray(commands[num_commands].command_string, commands[num_commands].command_length);
+    // printf("end printing the last command...\n\n");
     // printf("redirection after: %s\n", commands[num_commands].redirection);
     // printf("i: %d\n", i);
     // printf("command_len: %d\n", command_len);
@@ -96,15 +100,18 @@ void parse(char ** line_words, int num_words)
     // printArray(temp, command_len);
     // printf("num_commands: %d\n", num_commands);
 
-
-    // 
     num_commands++;
+    // DEBUG
+    // 
+    // printf("num_commands: %d\n", num_commands);
 
 
 
 
-
-    if (num_commands == 1) {
+    if (num_commands == 0) {
+        printf("Please enter a command\n");
+    }
+    else if (num_commands == 1) {
         pid_t pid = fork();
         if (pid == 0)
         {
@@ -116,17 +123,21 @@ void parse(char ** line_words, int num_words)
         }
         
     }
+
+
+    
+    // This is where multiple commands will be executed
     else {
         //TODO: handle pipes
-        int pfd[4];
-        pipe(pfd);
-        int j = 0;
-        printf("IN ELSE STATEMENT\n");
-        for (; j < num_commands - 1; j++) {
-            // printf("command_string: %s", commands[j].command_string);
-            // printf("command_length: %d", commands[j].command_length);
-            printArray(commands[0].command_string, commands[0].command_length);
+        // int pfd[4];
+        // pipe(pfd);
+        
+        // printf("IN ELSE STATEMENT\n");
+        for (int j = 0; j < num_commands; j++) {
+            printCommandStruct(commands[j]);
+    
         //     printf("j: %d", j);
+
         //     if (j == 0) {
         //         if (fork() == 0) {
         //             _execute(commands[j].command_string, commands[j].command_length, -1, pfd[1]);
@@ -141,9 +152,6 @@ void parse(char ** line_words, int num_words)
         // if (fork() == 0) {
         //     _execute(commands[j].command_string, commands[j].command_length, pfd[j - 1], -1);
         }
-        
-
-
     }
 }
 
@@ -172,14 +180,18 @@ void _execute(char ** line_words, int num_words, int in_pipe, int out_pipe)
 
 
 
-
-
-
-
-
-
+void printCommandStruct(struct command com) {
+    for (int i = 0; i < com.command_length; i++) {
+        printf("%s\n", com.command_string[i]);
+    }
+    if (com.redirection != NULL) {
+        printf("redirection: %s\n", com.redirection);
+    }
+}
 
 void strcpyarray(char * dest[], char * source[], int len) {
+    // If you call this function, it may not work.
+    // Was originally following the same logic as slicearray.
     for (int i = 0; i < len; i++) {
         dest[i] = (char *) malloc(strlen(source[i]) + 1);
         strcpy(dest[i], source[i]);
@@ -192,10 +204,12 @@ void printArray(char * c[], int len) {
     }
 }
 
-void slicearray(char * dest[], char * source[], int from, int to) {
-    for (int i = from, j =0; i <= to; i++, j++) {
-        dest[j] = (char *) malloc(strlen(source[i]) + 1);
-        strcpy(dest[j], source[i]);
+void slicearray(char ** dest, char * source[], int from, int to) {
+    int j = 0;
+    for (; from <= to; from++, j++) {
+        // strdup actually makes a copy of the string and 
+        // allocates memory from the heap.
+        dest[j] = strdup(source[from]);
     }
 }
 

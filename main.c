@@ -23,9 +23,9 @@ int main() {
         int num_words = split_cmd_line(line, line_words);
         parse(line_words, num_words);    
 
-        for (int i=0; i < num_words; i++) {
-            printf("%s\n", line_words[i]);
-        }
+        // for (int i=0; i < num_words; i++) {
+        //     printf("%s\n", line_words[i]);
+        // }
 
 
     }
