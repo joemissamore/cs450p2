@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 
 void strcpyarray(char * dest[], char * source[], int len) {
     for (int i = 0; i < len; i++) {
@@ -24,26 +26,59 @@ void printArray(char * c[], int len) {
 
 int main() {
     
-    int i = 0;
-    printf("%d\n", i++);
-    printf("%d\n", ++i);
+    // int i = 0;
+    // printf("%d\n", i++);
+    // printf("%d\n", ++i);
 
 
-    // Copying strings
-    char * c[2] = {"Hello1", "String2"};
-    char * dest[2];
-    printArray(c, 2);
-    strcpyarray(dest, c, 2);
-    c[0] = "";
-    c[1] = "";
-    printArray(dest, 2);
-    char * slice[1];
-    slicearray(slice, dest, 1, 1);
-    printArray(slice , 1);
-    int num_args = 2;
-    char * c1[num_args];
+    // // Copying strings
+    // char * c[2] = {"Hello1", "String2"};
+    // char * dest[2];
+    // printArray(c, 2);
+    // strcpyarray(dest, c, 2);
+    // c[0] = "";
+    // c[1] = "";
+    // printArray(dest, 2);
+    // char * slice[1];
+    // slicearray(slice, dest, 1, 1);
+    // printArray(slice , 1);
+    // int num_args = 2;
+    // char * c1[num_args];
 
     
+
+    // execlp
+     int pfds[10][2];
+
+    for (int x = 0; x < 10; x++) {
+        pipe(pfds[x]);
+    }
+
+    // sleep(60);
+    if (fork() == 0) {
+        dup2(pfds[0][1], 1);
+        for (int i = 3; i <= 20; i++) {
+            close(i);
+        }
+        execlp("ls", "ls", NULL);
+    }
+
+    if (fork() == 0) {
+        dup2(pfds[0][0], 0);
+        dup2(pfds[1][1], 1);
+        for (int i = 3; i <= 20; i++) {
+            close(i);
+        }
+        execlp("grep", "grep", "file", NULL);
+    }
+
+    if (fork() == 0) {
+        dup2(pfds[1][0], 0);
+        for (int i = 3; i <= 20; i++) {
+            close(i);
+        }
+        execlp("wc", "wc", NULL);
+    }
 
 
     return 0;

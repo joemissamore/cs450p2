@@ -128,13 +128,90 @@ void parse(char ** line_words, int num_words)
     
     // This is where multiple commands will be executed
     else {
-        //TODO: handle pipes
-        // int pfd[4];
-        // pipe(pfd);
         
+        // int num_fds = (num_commands - 1) * 2;
+
+        // int pfd[num_fds]; // pfd[4] ?? 
+        // pipe(pfd);
+        // TODO: create fds dynamically
+        int pfds[10][2];
+
+        for (int x = 0; x < 10; x++) {
+            pipe(pfds[x]);
+        }
+        printf("num_commands: %d\n", num_commands);
+        // printf("num_fds: %d\n", num_fds);
         // printf("IN ELSE STATEMENT\n");
         for (int j = 0; j < num_commands; j++) {
-            printCommandStruct(commands[j]);
+
+            if (j == 0) {
+                if (fork() == 0) {
+                    dup2(pfds[j / 2][1], 1);
+                    execvp(commands[j].command_string[0], commands[j].command_string);
+                }
+            }
+            else if (j == 1) {
+                if (fork() == 0) {
+                    dup2(pfds[j / 2][0], 0);
+                    dup2(pfds[(j + 1) / 2][1], 1);
+                    execvp(commands[j].command_string[0], commands[j].command_string);
+                }
+            } 
+            else if (j == 2) {
+                if (fork() == 0) {
+                    dup2(pfds[j / 2][0], 0);
+                    execvp(commands[j].command_string[0], commands[j].command_string);
+                }
+            }
+
+
+
+
+
+
+
+
+
+            // // printf("redirection: %s\n", commands[j].redirection);
+            // printf("executing commands: %s\n", commands[j].command_string[0]);
+
+            // if (commands[j].redirection != NULL) {
+            //     if (strcmp(commands[j].redirection, "|")== 0) {
+            //     printf("pipe\n");
+            //     // do for:
+            //     // ls -la | grep file
+            //         if (fork() == 0) {
+            //             printf("fork() == 0\n");
+            //             if (j == 0) {
+            //                 printf("Inside j==0 (command): %s\n", commands[j].command_string[0]);
+            //                 dup2(pfd[1], 1);
+            //                 execvp(commands[j].command_string[0], commands[j].command_string);
+            //             }
+            //             else { 
+            //                 printf("Inside else statement (j != 0) (command): %s\n", commands[j].command_string[0]);
+            //                 dup2(pfd[j - 1], 0);
+            //                 dup2(pfd[j + 1], 1);
+            //                 execvp(commands[j].command_string[0], commands[j].command_string);
+            //             }
+            //         }
+            //     } 
+            // } 
+            // // redirection == NULL
+            // else { 
+            //     // printf("Inside else statement\n");
+            //     printf("redirection == NULL\n");
+            //     printf("j: %d\n", j);
+            //     if (fork() == 0) {
+            //         printf("redirection == NULL (command): %s\n", commands[j].command_string[0]);
+            //         dup2(pfd[j], 0); // read from the write
+            //         execvp(commands[j].command_string[0], commands[j].command_string);
+            //     } 
+            //     else {
+            //         printf("fork != 0\n");
+            //     }
+            // }
+            
+            // printCommandStruct(commands[j]);
     
         //     printf("j: %d", j);
 
@@ -158,9 +235,7 @@ void parse(char ** line_words, int num_words)
 
 void _execute(char ** line_words, int num_words, int in_pipe, int out_pipe) 
 {
-    char * command = line_words[0];
-    printf("Executing command: %s\n", command);
-
+    
     if (in_pipe != -1) {
         dup2(in_pipe, 0);
     }
@@ -168,12 +243,10 @@ void _execute(char ** line_words, int num_words, int in_pipe, int out_pipe)
         dup2(out_pipe, 1);
     }
 
-    
-    // close(in_pipe);
-    // close(out_pipe);
-    int err_check = execvp(command, line_words);
+    int err_check = execvp(line_words[0], line_words);
+
     if (err_check == -1) {
-        printf("Error with command: %s\n", command);
+        printf("Error with command: %s\n", line_words[0]);
     }
 }
 
@@ -205,6 +278,7 @@ void printArray(char * c[], int len) {
 }
 
 void slicearray(char ** dest, char * source[], int from, int to) {
+    // https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
     int j = 0;
     for (; from <= to; from++, j++) {
         // strdup actually makes a copy of the string and 
