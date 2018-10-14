@@ -30,7 +30,7 @@ int split_cmd_line(char* line, char** list_to_populate) {
 bool is_arg_delim(char * w) {
     if (strcmp(w, "|") == 0 ||
             strcmp(w, "<") == 0 || 
-            strcmp(w, "<<") == 0 ||
+            // strcmp(w, "<<") == 0 ||
             strcmp(w, ">") == 0 || 
             strcmp(w, ">>") == 0) {
                 return true;
@@ -48,21 +48,28 @@ void parse(char ** line_words, int num_words)
     int i = 0;
     for (; i < num_words; i++) {
         char * w = line_words[i];
+            printf("w: %s\n", w);
             if (is_arg_delim(w)) {
-                char * temp[command_len + 1];
-                slicearray(temp, line_words, i - command_len, i);
-                command_len++;
+                char * temp[command_len];
+                slicearray(temp, line_words, i - command_len, i - 1);
+                // command_len++;
                 commands[num_commands].command_length = command_len;
                 commands[num_commands].command_string = temp;
-                num_commands++;
+                commands[num_commands].redirection = w;
+                
                 
 
                 
                 // DEBUG
+                printf("DEBUG\n");
                 // printf("command_len: %d\n", command_len);
+                // printf("i: %d\n", i);
                 // printf("command: \n");
                 // printArray(temp, command_len);
+                printArray(commands[num_commands].command_string, commands[num_commands].command_length);
+                // printf("redirection: %s\n", commands[num_commands].redirection);
 
+                num_commands++;
                 command_len = 0;
         }
         else {
@@ -76,14 +83,25 @@ void parse(char ** line_words, int num_words)
     char * temp[command_len];
     slicearray(temp, line_words, i - command_len + 1, i);
     commands[num_commands].command_string = temp;
-    num_commands++;
+    commands[num_commands].command_length = command_len;
+    commands[num_commands].redirection = NULL;
     
     // DEBUG
+    printf("num_commands: %d\n", num_commands);
+    printArray(commands[num_commands].command_string, commands[num_commands].command_length);
+    // printf("redirection after: %s\n", commands[num_commands].redirection);
     // printf("i: %d\n", i);
     // printf("command_len: %d\n", command_len);
     // printf("command: \n");
     // printArray(temp, command_len);
     // printf("num_commands: %d\n", num_commands);
+
+
+    // 
+    num_commands++;
+
+
+
 
 
     if (num_commands == 1) {
@@ -100,8 +118,30 @@ void parse(char ** line_words, int num_words)
     }
     else {
         //TODO: handle pipes
-        int pfd[num_commands - 1];
+        int pfd[4];
         pipe(pfd);
+        int j = 0;
+        printf("IN ELSE STATEMENT\n");
+        for (; j < num_commands - 1; j++) {
+            // printf("command_string: %s", commands[j].command_string);
+            // printf("command_length: %d", commands[j].command_length);
+            printArray(commands[0].command_string, commands[0].command_length);
+        //     printf("j: %d", j);
+        //     if (j == 0) {
+        //         if (fork() == 0) {
+        //             _execute(commands[j].command_string, commands[j].command_length, -1, pfd[1]);
+        //         }
+                
+        //     } else {
+        //         if (fork() == 0) {
+        //             _execute(commands[j].command_string, commands[j].command_length, pfd[j - 1], pfd[j+1]);
+        //         }
+        //     }
+        // }
+        // if (fork() == 0) {
+        //     _execute(commands[j].command_string, commands[j].command_length, pfd[j - 1], -1);
+        }
+        
 
 
     }
@@ -111,7 +151,7 @@ void parse(char ** line_words, int num_words)
 void _execute(char ** line_words, int num_words, int in_pipe, int out_pipe) 
 {
     char * command = line_words[0];
-    printf("Executing command: %s", command);
+    printf("Executing command: %s\n", command);
 
     if (in_pipe != -1) {
         dup2(in_pipe, 0);

@@ -21,7 +21,13 @@ int main() {
     // or some other input error occurs
     while( fgets(line, MAX_LINE_CHARS, stdin) ) {
         int num_words = split_cmd_line(line, line_words);
-        parse(line_words, num_words);
+        parse(line_words, num_words);    
+
+        for (int i=0; i < num_words; i++) {
+            printf("%s\n", line_words[i]);
+        }
+
+
     }
 
     return 0;

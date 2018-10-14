@@ -9,6 +9,7 @@
 struct command {
     int command_length; 
     char ** command_string;
+    char * redirection;
 };
 
 

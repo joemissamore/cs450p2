@@ -1,5 +1,5 @@
 .vscode/
-example/
+# example/
 
 # Prerequisites
 *.d
