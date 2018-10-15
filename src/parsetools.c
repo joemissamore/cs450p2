@@ -163,236 +163,57 @@ void parse(char ** line_words, int num_words)
         // printf("num_fds: %d\n", num_fds);
         // printf("IN ELSE STATEMENT\n");
         int j = 0;
-        for (; j < num_commands - 1; j++) {
+        for (; j < num_commands; j++) {
 
-        printf("j: %d\n", j);
-        printf("\ncommand: \n");
-        printArray(commands[j].command_string, commands[j].command_length);
-        printf("\n\n");
+            printf("j: %d\n", j);
+            printf("\ncommand: \n");
+            printArray(commands[j].command_string, commands[j].command_length);
+            printf("\n\n");
 
-        if (j == 0) {
-                if (fork() == 0) {
+            if (j == 0) {
+                    if (fork() == 0) {
 
-                    dup2(pfds[0][1], 1);
-                    // close(0);
-                    for (int y = 3; y < num_pipe_ends; y++) {
-                        close(y);
+                        dup2(pfds[0][1], 1);
+                        // close(0);
+                        for (int y = 3; y < num_pipe_ends; y++) {
+                            close(y);
+                        }
+                        // sleep(30);
+                        execvp(commands[j].command_string[0], commands[j].command_string);
                     }
-                    // sleep(30);
-                    execvp(commands[j].command_string[0], commands[j].command_string);
                 }
-            }
-            else { // if (j == 1) {
-                if (fork() == 0) {
-                    dup2(pfds[j - 1][0], 0);
-                    dup2(pfds[j][1], 1);
-                    for (int y = 3; y < num_pipe_ends; y++) {
-                        close(y);
+            else { 
+
+                if (strcmp(commands[j - 1]. redirection, ">") == 0) {
+
+                } 
+                else if (strcmp(commands[j - 1]. redirection, "|") == 0) {
+                    printf("PIPE |\n");
+                    if (fork() == 0) {
+                        // [1][0]
+                        dup2(pfds[j - 1][0], 0); // read
+
+                        if (j < num_commands - 1) {
+                            printf("writing to j!\n");
+                            printf("j: %d\n", j);
+                            printf("num_commands - 1: %d\n", num_commands - 1);
+                            dup2(pfds[j][1], 1); // write
+                        }
+                            
+                        for (int y = 3; y < num_pipe_ends; y++) {
+                            close(y);
+                        }
+                        execvp(commands[j].command_string[0], commands[j].command_string);
                     }
-                    execvp(commands[j].command_string[0], commands[j].command_string);
                 }
+                
             } 
         }
-
-        printf("j (outside for loop): %d\n", j);
-        printf("\ncommand: \n");
-        printArray(commands[j].command_string, commands[j].command_length);
-        printf("\n\n");
-        // For the last command we just need to read in from last pipe
-        if (fork() == 0) {
-            // pfds[0][0]
-            dup2(pfds[j - 1][0], 0);
-            for (int y = 3; y < num_pipe_ends; y++) {
-                close(y);
-            }
-            execvp(commands[j].command_string[0], commands[j].command_string);
-        }
-
+        //  Close parent pipes
         for (int y = 3; y < num_pipe_ends; y++) {
-                close(y);
+            close(y);
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // WORKS
-        //   if (j == 0) {
-        //         if (fork() == 0) {
-
-        //             dup2(pfds[0][1], 1);
-        //             // close(0);
-        //             for (int y = 3; y <= num_pipe_ends; y++) {
-        //                 close(y);
-        //             }
-        //             // sleep(30);
-        //             execvp(commands[j].command_string[0], commands[j].command_string);
-        //         }
-        //     }
-        //     else if (j == 1) {
-        //         if (fork() == 0) {
-        //             dup2(pfds[0][0], 0);
-        //             dup2(pfds[1][1], 1);
-        //             for (int y = 3; y <= num_pipe_ends; y++) {
-        //                 close(y);
-        //             }
-        //             execvp(commands[j].command_string[0], commands[j].command_string);
-        //         }
-        //     } 
-        // }
-        // printf("j (outside for loop): %d\n", j);
-
-        // // For the last command we just need to read in from last pipe
-        // if (fork() == 0) {
-        //     dup2(pfds[1][0], 0);
-        //     for (int y = 3; y <= num_pipe_ends; y++) {
-        //         close(y);
-        //     }
-        //     execvp(commands[j].command_string[0], commands[j].command_string);
-        // }
-
-        // for (int y = 3; y <= num_pipe_ends; y++) {
-        //         close(y);
-        // }
-        
-
-
-
-
-
-
-            // WORKS
-            // if (j == 0) {
-            //     if (fork() == 0) {
-
-            //         dup2(pfds[0][1], 1);
-            //         for (int y = 2; y <= num_pipe_ends; y++) {
-            //             close(y);
-            //         }
-            //         execvp(commands[j].command_string[0], commands[j].command_string);
-            //     }
-            // }
-            // else if (j == 1) {
-            //     if (fork() == 0) {
-            //         dup2(pfds[0][0], 0);
-            //         dup2(pfds[1][1], 1);
-            //         for (int y = 3; y <= num_pipe_ends; y++) {
-            //             close(y);
-            //         }
-            //         execvp(commands[j].command_string[0], commands[j].command_string);
-            //     }
-            // } 
-            // else {
-            //     dup2(pfds[1][0], 0);
-            //     for (int y = 3; y <= num_pipe_ends; y++) {
-            //             close(y);
-            //     }
-            //     execvp(commands[j].command_string[0], commands[j].command_string);
-
-            // }
-
-
-
-
-
-
-
-
-            // else if (j == 2) {
-            //     printf("Inside j == 2\n");
-            //     if (fork() == 0) {
-            //         printf("pid, %d", getpid());
-            //         dup2(pfds[1][0], 0);
-            //         for (int y = 3; y <= num_pipe_ends; y++) {
-            //             close(y);
-            //         }
-            //         execvp(commands[j].command_string[0], commands[j].command_string);
-            //     }
-            
-
-
-
-
-
-
-
-
-
-            // // printf("redirection: %s\n", commands[j].redirection);
-            // printf("executing commands: %s\n", commands[j].command_string[0]);
-
-            // if (commands[j].redirection != NULL) {
-            //     if (strcmp(commands[j].redirection, "|")== 0) {
-            //     printf("pipe\n");
-            //     // do for:
-            //     // ls -la | grep file
-            //         if (fork() == 0) {
-            //             printf("fork() == 0\n");
-            //             if (j == 0) {
-            //                 printf("Inside j==0 (command): %s\n", commands[j].command_string[0]);
-            //                 dup2(pfd[1], 1);
-            //                 execvp(commands[j].command_string[0], commands[j].command_string);
-            //             }
-            //             else { 
-            //                 printf("Inside else statement (j != 0) (command): %s\n", commands[j].command_string[0]);
-            //                 dup2(pfd[j - 1], 0);
-            //                 dup2(pfd[j + 1], 1);
-            //                 execvp(commands[j].command_string[0], commands[j].command_string);
-            //             }
-            //         }
-            //     } 
-            // } 
-            // // redirection == NULL
-            // else { 
-            //     // printf("Inside else statement\n");
-            //     printf("redirection == NULL\n");
-            //     printf("j: %d\n", j);
-            //     if (fork() == 0) {
-            //         printf("redirection == NULL (command): %s\n", commands[j].command_string[0]);
-            //         dup2(pfd[j], 0); // read from the write
-            //         execvp(commands[j].command_string[0], commands[j].command_string);
-            //     } 
-            //     else {
-            //         printf("fork != 0\n");
-            //     }
-            // }
-            
-            // printCommandStruct(commands[j]);
-    
-        //     printf("j: %d", j);
-
-        //     if (j == 0) {
-        //         if (fork() == 0) {
-        //             _execute(commands[j].command_string, commands[j].command_length, -1, pfd[1]);
-        //         }
-                
-        //     } else {
-        //         if (fork() == 0) {
-        //             _execute(commands[j].command_string, commands[j].command_length, pfd[j - 1], pfd[j+1]);
-        //         }
-        //     }
-        // }
-        // if (fork() == 0) {
-        //     _execute(commands[j].command_string, commands[j].command_length, pfd[j - 1], -1);
-        }
-    // }
+    }
 }
 
 
