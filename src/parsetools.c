@@ -64,6 +64,7 @@ void parse(char ** line_words, int num_words)
         if (is_arg_delim(w)) {
             char ** temp = (char **) malloc(sizeof(command_len + 1));
             slicearray(temp, line_words, i - command_len, i - 1);
+            printf("\n\ntemp: %s\n\n", temp[command_len]);
             commands[num_commands].command_length = command_len;
             commands[num_commands].command_string = temp;
             commands[num_commands].redirection = w;
@@ -84,8 +85,11 @@ void parse(char ** line_words, int num_words)
     // Allocating space for the double pointer
     // +1 indicates space for the null terminator
     char ** temp = (char **) malloc(sizeof(command_len + 1));
-    
     slicearray(temp, line_words, i - command_len + 1, i);
+    // printf("\n\ntemp: %s\n\n", temp[0]);
+    printArray(temp, command_len);
+    printf("\n\ntemp: %s\n\n", temp[command_len]);
+    
     commands[num_commands].command_string = temp;
     commands[num_commands].command_length = command_len;
     commands[num_commands].redirection = NULL;
@@ -135,7 +139,7 @@ void parse(char ** line_words, int num_words)
         // pipe(pfd);
         // TODO: create fds dynamically
         int num_pipes = num_commands - 1;
-        int num_pipe_ends = (num_pipes * 2) + 2;
+        int num_pipe_ends = (num_pipes * 2) + 3;
         int pfds[num_pipes][2];
 
         for (int x = 0; x < num_pipes; x++) {
@@ -150,43 +154,50 @@ void parse(char ** line_words, int num_words)
         int j = 0;
         for (; j < num_commands - 1; j++) {
 
-            printf("j: %d\n", j);
+        printf("j: %d\n", j);
+        printf("\ncommand: \n");
+        printArray(commands[j].command_string, commands[j].command_length);
+        printf("\n\n");
 
-       if (j == 0) {
+        if (j == 0) {
                 if (fork() == 0) {
 
                     dup2(pfds[0][1], 1);
                     // close(0);
-                    for (int y = 3; y <= num_pipe_ends; y++) {
+                    for (int y = 3; y < num_pipe_ends; y++) {
                         close(y);
                     }
                     // sleep(30);
                     execvp(commands[j].command_string[0], commands[j].command_string);
                 }
             }
-            else if (j == 1) {
+            else { // if (j == 1) {
                 if (fork() == 0) {
-                    dup2(pfds[0][0], 0);
-                    dup2(pfds[1][1], 1);
-                    for (int y = 3; y <= num_pipe_ends; y++) {
+                    dup2(pfds[j - 1][0], 0);
+                    dup2(pfds[j][1], 1);
+                    for (int y = 3; y < num_pipe_ends; y++) {
                         close(y);
                     }
                     execvp(commands[j].command_string[0], commands[j].command_string);
                 }
             } 
         }
-        printf("j (outside for loop): %d\n", j);
 
+        printf("j (outside for loop): %d\n", j);
+        printf("\ncommand: \n");
+        printArray(commands[j].command_string, commands[j].command_length);
+        printf("\n\n");
         // For the last command we just need to read in from last pipe
         if (fork() == 0) {
-            dup2(pfds[1][0], 0);
-            for (int y = 3; y <= num_pipe_ends; y++) {
+            // pfds[0][0]
+            dup2(pfds[j - 1][0], 0);
+            for (int y = 3; y < num_pipe_ends; y++) {
                 close(y);
             }
             execvp(commands[j].command_string[0], commands[j].command_string);
         }
 
-        for (int y = 3; y <= num_pipe_ends; y++) {
+        for (int y = 3; y < num_pipe_ends; y++) {
                 close(y);
         }
 
@@ -426,6 +437,7 @@ void slicearray(char ** dest, char * source[], int from, int to) {
         // allocates memory from the heap.
         dest[j] = strdup(source[from]);
     }
+    dest[j] = NULL;
 }
 
 

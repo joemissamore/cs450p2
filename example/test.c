@@ -60,20 +60,22 @@ int main() {
         for (int i = 3; i <= 20; i++) {
             close(i);
         }
-        execlp("ls", "ls", NULL);
+        // execlp("ls", "ls", "-l", "-a", "-x", NULL);
+        char * c[] = {"ls", "-l", "-a", "-x", NULL};
+        execvp(c[0], c);
     }
+
+    // if (fork() == 0) {
+    //     dup2(pfds[0][0], 0);
+    //     dup2(pfds[1][1], 1);
+    //     for (int i = 3; i <= 20; i++) {
+    //         close(i);
+    //     }
+    //     execlp("grep", "grep", "file", NULL);
+    // }
 
     if (fork() == 0) {
         dup2(pfds[0][0], 0);
-        dup2(pfds[1][1], 1);
-        for (int i = 3; i <= 20; i++) {
-            close(i);
-        }
-        execlp("grep", "grep", "file", NULL);
-    }
-
-    if (fork() == 0) {
-        dup2(pfds[1][0], 0);
         for (int i = 3; i <= 20; i++) {
             close(i);
         }
