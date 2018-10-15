@@ -62,7 +62,8 @@ void parse(char ** line_words, int num_words)
         // If it sees a redirect we will capture the 
         // entire command. 
         if (is_arg_delim(w)) {
-            char ** temp = (char **) malloc(sizeof(command_len + 1));
+            // char ** temp = (char **) malloc(sizeof(command_len + 1));
+            char ** temp = (char **) malloc(((command_len + 1) * sizeof(char *))); 
             slicearray(temp, line_words, i - command_len, i - 1);
             printf("\n\ntemp: %s\n\n", temp[command_len]);
             commands[num_commands].command_length = command_len;
@@ -84,7 +85,11 @@ void parse(char ** line_words, int num_words)
 
     // Allocating space for the double pointer
     // +1 indicates space for the null terminator
-    char ** temp = (char **) malloc(sizeof(command_len + 1));
+
+    // ls -lax = 2
+    // ls -l -a -x = 4
+    char ** temp = (char **) malloc(((command_len + 1) * sizeof(char *))); 
+    // slicearray(temp, line_words, i - command_len + 1, i);
     slicearray(temp, line_words, i - command_len + 1, i);
     // printf("\n\ntemp: %s\n\n", temp[0]);
     printArray(temp, command_len);
@@ -119,7 +124,13 @@ void parse(char ** line_words, int num_words)
         pid_t pid = fork();
         if (pid == 0)
         {
-            _execute(line_words, num_words, -1, -1);
+            // _execute(line_words, num_words, -1, -1);
+            // execvp(commands[0].command_string[0], commands[0].command_string);
+            int err_check = execvp(commands[0].command_string[0], commands[0].command_string);
+            if (err_check == -1) {
+                printf("Error with command: %s\n", line_words[0]);
+                printArray(commands[0].command_string, commands[0].command_length);
+            }
         }
         else if (pid < 0) {
             printf("Error creating child process on command: %s", line_words[0]);
