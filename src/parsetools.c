@@ -134,35 +134,176 @@ void parse(char ** line_words, int num_words)
         // int pfd[num_fds]; // pfd[4] ?? 
         // pipe(pfd);
         // TODO: create fds dynamically
-        int pfds[10][2];
+        int num_pipes = num_commands - 1;
+        int num_pipe_ends = (num_pipes * 2) + 2;
+        int pfds[num_pipes][2];
 
-        for (int x = 0; x < 10; x++) {
+        for (int x = 0; x < num_pipes; x++) {
             pipe(pfds[x]);
         }
         printf("num_commands: %d\n", num_commands);
+        printf("num_pipes: %d\n", num_pipes);
+        printf("num_pipe_ends: %d\n", num_pipe_ends);
+
         // printf("num_fds: %d\n", num_fds);
         // printf("IN ELSE STATEMENT\n");
-        for (int j = 0; j < num_commands; j++) {
+        int j = 0;
+        for (; j < num_commands - 1; j++) {
 
-            if (j == 0) {
+            printf("j: %d\n", j);
+
+       if (j == 0) {
                 if (fork() == 0) {
-                    dup2(pfds[j / 2][1], 1);
+
+                    dup2(pfds[0][1], 1);
+                    // close(0);
+                    for (int y = 3; y <= num_pipe_ends; y++) {
+                        close(y);
+                    }
+                    // sleep(30);
                     execvp(commands[j].command_string[0], commands[j].command_string);
                 }
             }
             else if (j == 1) {
                 if (fork() == 0) {
-                    dup2(pfds[j / 2][0], 0);
-                    dup2(pfds[(j + 1) / 2][1], 1);
+                    dup2(pfds[0][0], 0);
+                    dup2(pfds[1][1], 1);
+                    for (int y = 3; y <= num_pipe_ends; y++) {
+                        close(y);
+                    }
                     execvp(commands[j].command_string[0], commands[j].command_string);
                 }
             } 
-            else if (j == 2) {
-                if (fork() == 0) {
-                    dup2(pfds[j / 2][0], 0);
-                    execvp(commands[j].command_string[0], commands[j].command_string);
-                }
+        }
+        printf("j (outside for loop): %d\n", j);
+
+        // For the last command we just need to read in from last pipe
+        if (fork() == 0) {
+            dup2(pfds[1][0], 0);
+            for (int y = 3; y <= num_pipe_ends; y++) {
+                close(y);
             }
+            execvp(commands[j].command_string[0], commands[j].command_string);
+        }
+
+        for (int y = 3; y <= num_pipe_ends; y++) {
+                close(y);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // WORKS
+        //   if (j == 0) {
+        //         if (fork() == 0) {
+
+        //             dup2(pfds[0][1], 1);
+        //             // close(0);
+        //             for (int y = 3; y <= num_pipe_ends; y++) {
+        //                 close(y);
+        //             }
+        //             // sleep(30);
+        //             execvp(commands[j].command_string[0], commands[j].command_string);
+        //         }
+        //     }
+        //     else if (j == 1) {
+        //         if (fork() == 0) {
+        //             dup2(pfds[0][0], 0);
+        //             dup2(pfds[1][1], 1);
+        //             for (int y = 3; y <= num_pipe_ends; y++) {
+        //                 close(y);
+        //             }
+        //             execvp(commands[j].command_string[0], commands[j].command_string);
+        //         }
+        //     } 
+        // }
+        // printf("j (outside for loop): %d\n", j);
+
+        // // For the last command we just need to read in from last pipe
+        // if (fork() == 0) {
+        //     dup2(pfds[1][0], 0);
+        //     for (int y = 3; y <= num_pipe_ends; y++) {
+        //         close(y);
+        //     }
+        //     execvp(commands[j].command_string[0], commands[j].command_string);
+        // }
+
+        // for (int y = 3; y <= num_pipe_ends; y++) {
+        //         close(y);
+        // }
+        
+
+
+
+
+
+
+            // WORKS
+            // if (j == 0) {
+            //     if (fork() == 0) {
+
+            //         dup2(pfds[0][1], 1);
+            //         for (int y = 2; y <= num_pipe_ends; y++) {
+            //             close(y);
+            //         }
+            //         execvp(commands[j].command_string[0], commands[j].command_string);
+            //     }
+            // }
+            // else if (j == 1) {
+            //     if (fork() == 0) {
+            //         dup2(pfds[0][0], 0);
+            //         dup2(pfds[1][1], 1);
+            //         for (int y = 3; y <= num_pipe_ends; y++) {
+            //             close(y);
+            //         }
+            //         execvp(commands[j].command_string[0], commands[j].command_string);
+            //     }
+            // } 
+            // else {
+            //     dup2(pfds[1][0], 0);
+            //     for (int y = 3; y <= num_pipe_ends; y++) {
+            //             close(y);
+            //     }
+            //     execvp(commands[j].command_string[0], commands[j].command_string);
+
+            // }
+
+
+
+
+
+
+
+
+            // else if (j == 2) {
+            //     printf("Inside j == 2\n");
+            //     if (fork() == 0) {
+            //         printf("pid, %d", getpid());
+            //         dup2(pfds[1][0], 0);
+            //         for (int y = 3; y <= num_pipe_ends; y++) {
+            //             close(y);
+            //         }
+            //         execvp(commands[j].command_string[0], commands[j].command_string);
+            //     }
+            
 
 
 
@@ -229,7 +370,7 @@ void parse(char ** line_words, int num_words)
         // if (fork() == 0) {
         //     _execute(commands[j].command_string, commands[j].command_length, pfd[j - 1], -1);
         }
-    }
+    // }
 }
 
 
