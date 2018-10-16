@@ -123,12 +123,37 @@ void parse(char ** line_words, int num_words)
 
             
             bool WRITE_TO_FILE = false;
-            if (commands[j].redirection != NULL && strcmp(commands[j].redirection, ">") == 0) {
+            bool APPEND_TO_FILE = false;
+            bool CREAT_OVEWRIT_FILE = false;
+
+            if (commands[j].redirection != NULL && strcmp(commands[j].redirection, ">") == 0) { WRITE_TO_FILE = true; CREAT_OVEWRIT_FILE = true; }
+            else if (commands[j].redirection != NULL && strcmp(commands[j].redirection, ">>") == 0) { WRITE_TO_FILE = true; APPEND_TO_FILE = true; }
+            
+            if (WRITE_TO_FILE) {
                 printf("REDIRECTION >\n");
                 WRITE_TO_FILE = true;
                 fflush(stdout);
                 saved = dup(1);
-                pfd = open(commands[j+1].command_string[0], O_WRONLY | O_CREAT, 0777);
+                // Check to make sure user didnt enter
+                // command > 
+                if (commands[j+1].command_string[0] == NULL) {
+                    printf("Expecting file for redirect...\n");
+                    break;
+                }
+                // Someone entered a pipe in the middle of 
+                // their command sequence like...
+                // command1 | command 2 > file | command3
+                if (j != num_commands - 2) {
+                    printf("File redirect in the wrong position...\n");
+                    break;
+                }
+                if (CREAT_OVEWRIT_FILE) {
+                    pfd = open(commands[j+1].command_string[0], O_WRONLY | O_CREAT, 0777);
+                }
+                else if (APPEND_TO_FILE) {
+                    pfd = open(commands[j+1].command_string[0], O_WRONLY | O_APPEND, 0777);
+                }
+                
                 dup2(pfd, 1);
                 close(pfd);
 
@@ -154,7 +179,11 @@ void parse(char ** line_words, int num_words)
                 for (int y = 3; y < num_pipe_ends; y++) {
                     close(y);
                 }
-                execvp(commands[j].command_string[0], commands[j].command_string);
+                int err_check = execvp(commands[j].command_string[0], commands[j].command_string);
+                if (err_check == - 1) {
+                    printf("strut shell: command: %s not found...\n", commands[j].command_string[0]);
+
+                }
             }
 
             if (WRITE_TO_FILE) {
@@ -171,27 +200,6 @@ void parse(char ** line_words, int num_words)
         }
     }
 }
-
-
-void _execute(char ** line_words, int num_words, int in_pipe, int out_pipe) 
-{
-    
-    if (in_pipe != -1) {
-        dup2(in_pipe, 0);
-    }
-    if (out_pipe != -1) {
-        dup2(out_pipe, 1);
-    }
-
-    int err_check = execvp(line_words[0], line_words);
-
-    if (err_check == -1) {
-        printf("Error with command: %s\n", line_words[0]);
-    }
-}
-
-
-
 
 void printCommandStruct(struct command com) {
     for (int i = 0; i < com.command_length; i++) {
