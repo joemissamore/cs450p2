@@ -53,41 +53,69 @@ int main() {
 
     
 
-    // execlp
-     int pfds[10][2];
+    // // execlp
+    //  int pfds[10][2];
 
-    for (int x = 0; x < 10; x++) {
-        pipe(pfds[x]);
-    }
+    // for (int x = 0; x < 10; x++) {
+    //     pipe(pfds[x]);
+    // }
 
-    // sleep(60);
-    if (fork() == 0) {
-        dup2(pfds[0][1], 1);
-        for (int i = 3; i <= 20; i++) {
-            close(i);
-        }
-        // execlp("ls", "ls", "-l", "-a", "-x", NULL);
-        char * c[] = {"ls", "-l", "-a", "-x", NULL};
-        execvp(c[0], c);
-    }
-
+    // // sleep(60);
     // if (fork() == 0) {
-    //     dup2(pfds[0][0], 0);
-    //     dup2(pfds[1][1], 1);
+    //     dup2(pfds[0][1], 1);
     //     for (int i = 3; i <= 20; i++) {
     //         close(i);
     //     }
-    //     execlp("grep", "grep", "file", NULL);
+    //     // execlp("ls", "ls", "-l", "-a", "-x", NULL);
+    //     char * c[] = {"ls", "-l", "-a", "-x", NULL};
+    //     execvp(c[0], c);
     // }
 
-    if (fork() == 0) {
-        dup2(pfds[0][0], 0);
-        for (int i = 3; i <= 20; i++) {
-            close(i);
-        }
-        execlp("wc", "wc", NULL);
-    }
+    // // if (fork() == 0) {
+    // //     dup2(pfds[0][0], 0);
+    // //     dup2(pfds[1][1], 1);
+    // //     for (int i = 3; i <= 20; i++) {
+    // //         close(i);
+    // //     }
+    // //     execlp("grep", "grep", "file", NULL);
+    // // }
 
+    // if (fork() == 0) {
+    //     dup2(pfds[0][0], 0);
+    //     for (int i = 3; i <= 20; i++) {
+    //         close(i);
+    //     }
+    //     execlp("wc", "wc", NULL);
+    // }
+
+
+    /*
+    
+    int bak, new;
+    fflush(stdout);
+    bak = dup(1);
+    new = open("/dev/null", O_WRONLY);
+    dup2(new, 1);
+    close(new);
+    /* your code here ... 
+    fflush(stdout);
+    dup2(bak, 1);
+    close(bak);
+    
+    */
+
+    // Restoring stdout
+    fflush(stdout);
+    int saved = dup(1);
+    int pfd = open("file.txt", O_WRONLY | O_CREAT, 0777);
+    dup2(pfd, 1);
+    close(pfd);
+
+    printf("Hi file\n");
+
+    fflush(stdout);
+    dup2(saved, 1);
+    close(saved);
 
     return 0;
 }

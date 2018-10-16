@@ -175,22 +175,36 @@ void parse(char ** line_words, int num_words)
             // printArray(commands[j].command_string, commands[j].command_length);
             // printf("\n\n");
 
+            int saved;
+            int pfd;
+
             if (j == 0) {
-                    bool WRITE_TO_FILE = false;
-                    if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, ">") == 0) {
-                        WRITE_TO_FILE = true;
-                        j++; // increment j past ( j < num_commands )
+                bool WRITE_TO_FILE = false;
+                if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, ">") == 0) {
+                    fflush(stdout);
+                    saved = dup(1);
+                    pfd = open(commands[j+1].command_string[0], O_WRONLY | O_CREAT, 0777);
+                    dup2(pfd, 1);
+                    close(pfd);
+
                     }
                     if (fork() == 0) {
                         if (WRITE_TO_FILE) {
                             printf("WRITE_TO_FILE\n");
                         }
-                        dup2(pfds[0][1], 1); // write
+                        // dup2(pfds[0][1], 1); // write
                         for (int y = 3; y < num_pipe_ends; y++) {
                             close(y);
                         }
                         execvp(commands[j].command_string[0], commands[j].command_string);
                     }
+
+
+                    fflush(stdout);
+                    dup2(saved, 1);
+                    close(saved);
+                    j++; // increment j past ( j < num_commands )
+
                 }
             else { 
                 /*
