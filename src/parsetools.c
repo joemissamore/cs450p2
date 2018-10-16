@@ -6,7 +6,12 @@
 #include "constants.h"
 #include "parsetools.h"
 
-
+/* For open() */
+#include <fcntl.h>
+/* Not technically required, but needed on some UNIX distributions */
+#include <sys/types.h>
+#include <sys/stat.h>
+/* end open() */
 
 // Parse a command line into a list of words,
 //    separated by whitespace.
@@ -65,7 +70,7 @@ void parse(char ** line_words, int num_words)
             // char ** temp = (char **) malloc(sizeof(command_len + 1));
             char ** temp = (char **) malloc(((command_len + 1) * sizeof(char *))); 
             slicearray(temp, line_words, i - command_len, i - 1);
-            printf("\n\ntemp: %s\n\n", temp[command_len]);
+            // printf("\n\ntemp: %s\n\n", temp[command_len]);
             commands[num_commands].command_length = command_len;
             commands[num_commands].command_string = temp;
             commands[num_commands].redirection = w;
@@ -92,8 +97,8 @@ void parse(char ** line_words, int num_words)
     // slicearray(temp, line_words, i - command_len + 1, i);
     slicearray(temp, line_words, i - command_len + 1, i);
     // printf("\n\ntemp: %s\n\n", temp[0]);
-    printArray(temp, command_len);
-    printf("\n\ntemp: %s\n\n", temp[command_len]);
+    // printArray(temp, command_len);
+    // printf("\n\ntemp: %s\n\n", temp[command_len]);
     
     commands[num_commands].command_string = temp;
     commands[num_commands].command_length = command_len;
@@ -156,35 +161,49 @@ void parse(char ** line_words, int num_words)
         for (int x = 0; x < num_pipes; x++) {
             pipe(pfds[x]);
         }
-        printf("num_commands: %d\n", num_commands);
-        printf("num_pipes: %d\n", num_pipes);
-        printf("num_pipe_ends: %d\n", num_pipe_ends);
+        // printf("num_commands: %d\n", num_commands);
+        // printf("num_pipes: %d\n", num_pipes);
+        // printf("num_pipe_ends: %d\n", num_pipe_ends);
 
         // printf("num_fds: %d\n", num_fds);
         // printf("IN ELSE STATEMENT\n");
         int j = 0;
         for (; j < num_commands; j++) {
 
-            printf("j: %d\n", j);
-            printf("\ncommand: \n");
-            printArray(commands[j].command_string, commands[j].command_length);
-            printf("\n\n");
+            // printf("j: %d\n", j);
+            // printf("\ncommand: \n");
+            // printArray(commands[j].command_string, commands[j].command_length);
+            // printf("\n\n");
 
             if (j == 0) {
+                    bool WRITE_TO_FILE = false;
+                    if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, ">") == 0) {
+                        WRITE_TO_FILE = true;
+                        j++; // increment j past ( j < num_commands )
+                    }
                     if (fork() == 0) {
-
-                        dup2(pfds[0][1], 1);
-                        // close(0);
+                        if (WRITE_TO_FILE) {
+                            printf("WRITE_TO_FILE\n");
+                        }
+                        dup2(pfds[0][1], 1); // write
                         for (int y = 3; y < num_pipe_ends; y++) {
                             close(y);
                         }
-                        // sleep(30);
                         execvp(commands[j].command_string[0], commands[j].command_string);
                     }
                 }
             else { 
-
-                if (strcmp(commands[j - 1]. redirection, ">") == 0) {
+                /*
+                If the number of commands is greater than 1 we need to handle it
+                */
+                if (strcmp(commands[j - 1].redirection, ">") == 0) {
+                    if (fork() == 0) {
+                        printf("REDIRECTION > \n");
+                        int fd = open(commands[j].command_string[0], O_WRONLY | O_CREAT, 0777);
+                        dup2(pfds[j - 1][0], 0); // read
+                        dup2(fd, 1); // write
+                    }
+                    
 
                 } 
                 else if (strcmp(commands[j - 1]. redirection, "|") == 0) {

@@ -3,6 +3,12 @@
 #include <string.h>
 #include <unistd.h>
 
+/* For open() */
+#include <fcntl.h>
+/* Not technically required, but needed on some UNIX distributions */
+#include <sys/types.h>
+#include <sys/stat.h>
+/* end open() */
 
 void strcpyarray(char * dest[], char * source[], int len) {
     for (int i = 0; i < len; i++) {
