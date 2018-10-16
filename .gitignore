@@ -1,6 +1,9 @@
 .vscode/
 # example/
 
+# Ignore my test files
+file*
+
 # Prerequisites
 *.d
 
