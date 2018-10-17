@@ -125,19 +125,19 @@ void parse(char ** line_words, int num_words)
             bool WRITE_TO_FILE = false;
             bool APPEND_TO_FILE = false;
             bool CREAT_OVEWRIT_FILE = false;
+            bool READ_IN_FR_FILE = false;
 
             if (commands[j].redirection != NULL && strcmp(commands[j].redirection, ">") == 0) { WRITE_TO_FILE = true; CREAT_OVEWRIT_FILE = true; }
             else if (commands[j].redirection != NULL && strcmp(commands[j].redirection, ">>") == 0) { WRITE_TO_FILE = true; APPEND_TO_FILE = true; }
+            else if (commands[j].redirection != NULL && strcmp(commands[j].redirection, "<") == 0) { READ_IN_FR_FILE = true; }
             
             if (WRITE_TO_FILE) {
-                printf("REDIRECTION >\n");
-                WRITE_TO_FILE = true;
                 fflush(stdout);
                 saved = dup(1);
                 // Check to make sure user didnt enter
                 // command > 
                 if (commands[j+1].command_string[0] == NULL) {
-                    printf("Expecting file for redirect...\n");
+                    printf("Expecting file for redirect > <file>\n");
                     break;
                 }
                 // Someone entered a pipe in the middle of 
@@ -157,25 +157,42 @@ void parse(char ** line_words, int num_words)
                 dup2(pfd, 1);
                 close(pfd);
 
+            } 
+            else if (READ_IN_FR_FILE) {
+                printf("FILE REDIRECTION <\n");
+                fflush(stdin);
+                saved = dup(0);
+                if (commands[j+1].command_string[0] == NULL) {
+                    printf("Expecting file for redirect < <file>\n");
+                    break;
+                }
+                pfd = open(commands[j+1].command_string[0], O_RDONLY);
+                dup2(pfd, 0);
+                close(pfd);
             }
             if (fork() == 0) {
-                if(!WRITE_TO_FILE && j == 0) {
-                    dup2(pfds[0][1], 1); // write
+                if (!READ_IN_FR_FILE) {
+                    if(!WRITE_TO_FILE && j == 0) {
+                        dup2(pfds[0][1], 1); // write
+                    }
+                    else if (!WRITE_TO_FILE && j < num_commands - 1) {
+                        dup2(pfds[j - 1][0], 0); // read
+                        dup2(pfds[j][1], 1); // write
+                    }
+                    else if (j == num_commands - 1) {
+                        dup2(pfds[j - 1][0], 0); // read
+                    } 
+                    // if you are on the last command...
+                    // still need to read from prev
+                    // pipes
+                    // ls -la | grep file > writefile
+                    else if (WRITE_TO_FILE && j == num_commands - 2) {
+                        dup2(pfds[j - 1][0], 0); // read
+                    }
                 }
-                else if (!WRITE_TO_FILE && j < num_commands - 1) {
-                    dup2(pfds[j - 1][0], 0); // read
-                    dup2(pfds[j][1], 1); // write
-                }
-                else if (j == num_commands - 1) {
-                    dup2(pfds[j - 1][0], 0); // read
-                } 
-                // if you are on the last command...
-                // still need to read from prev
-                // pipes
-                // ls -la | grep file > writefile
-                else if (WRITE_TO_FILE && j == num_commands - 2) {
-                    dup2(pfds[j - 1][0], 0); // read
-                }
+               
+
+
                 for (int y = 3; y < num_pipe_ends; y++) {
                     close(y);
                 }
@@ -192,6 +209,16 @@ void parse(char ** line_words, int num_words)
                 close(saved);
                 // This should kick us out of the for loop
                 j++; // increment j past ( j < num_commands )
+            }
+            else if (READ_IN_FR_FILE) {
+                fflush(stdin);
+                dup2(saved, 0);
+                close(saved);
+                // Increment past file name
+                // TODO: This is going to have problems with commands that follow...
+                // grep someword < file.txt | wc
+                // not going to pick up on pipe
+                j++; 
             }
         }
         //  Close parent pipes
