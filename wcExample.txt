@@ -1,3 +1,0 @@
-This This This this
-is a word that you will count as the most common word.
-It will be counted 4 times.
