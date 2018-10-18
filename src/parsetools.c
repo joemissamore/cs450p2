@@ -168,6 +168,10 @@ void parse(char ** line_words, int num_words)
                     printf("Expecting file for redirect < <file>\n");
                     break;
                 }
+                else if (commands[j+1].command_length > 1) {
+                    printf("ERR <filename>\n");
+                    break;
+                }
                 pfd = open(commands[j+1].command_string[0], O_RDONLY);
                 dup2(pfd, 0);
                 close(pfd);
@@ -195,11 +199,9 @@ void parse(char ** line_words, int num_words)
                 else if (READ_IN_FR_FILE) {
                     if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, "|") == 0) {
                         printf("REDIRECTION < PIPE |\n");
-                        dup2(pfds[j][1], 1); // write
+                        dup2(pfds[1][1], 1); // write
                     }
                 }
-               
-
 
                 for (int y = 3; y < num_pipe_ends; y++) {
                     close(y);
