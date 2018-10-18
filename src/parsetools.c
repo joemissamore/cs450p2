@@ -1,3 +1,10 @@
+/**********************************************************************
+* Assignment: Problem Set 2 - Shell recreation                        *
+* Author: Gabriel Duarte, Joe Missamore, Mei Williams                 *
+* Date: Fall 2018                                                     *
+* Description: This will parse all input (within reason) and show     *
+*              correct output as if it were part of the bash terminal.*
+**********************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -16,33 +23,46 @@
 // Parse a command line into a list of words,
 //    separated by whitespace.
 // Returns the number of words
-//
+
 int split_cmd_line(char* line, char** list_to_populate) {
-   char* saveptr;  // for strtok_r; see http://linux.die.net/man/3/strtok_r
-   char* delimiters = " \t\n"; // whitespace
-   int i = 0;
+    char* saveptr;  // for strtok_r; see http://linux.die.net/man/3/strtok_r
+    char* delimiters = " \t\n"; // whitespace
+    int i = 0;
 
     // char *strtok_r(char *str, const char *delim, char **saveptr);
-   list_to_populate[0] = strtok_r(line, delimiters, &saveptr);
+    list_to_populate[0] = strtok_r(line, delimiters, &saveptr);
 
-   while(list_to_populate[i] != NULL && i < MAX_LINE_WORDS - 1)  {
-       list_to_populate[++i] = strtok_r(NULL, delimiters, &saveptr);
-   };
+    while(list_to_populate[i] != NULL && i < MAX_LINE_WORDS - 1)  {
+        list_to_populate[++i] = strtok_r(NULL, delimiters, &saveptr);
+    };
 
-   return i;
+    return i;
 }
 
+/******************************************************************************
+ *  Function:  is_arg_delim                                                   *
+ *  Parameters: w (an element in our line_words array)                        *
+ *  Returns:   True if it is a matching delimiter, false otherwise            *
+ *  Description: This will compare a list element for command purposes        *
+ *****************************************************************************/
 bool is_arg_delim(char * w) {
     if (strcmp(w, "|") == 0 ||
             strcmp(w, "<") == 0 ||
-            strcmp(w, ">") == 0 || 
+            strcmp(w, ">") == 0 ||
             strcmp(w, ">>") == 0) {
                 return true;
             }
             return false;
 }
 
-void parse(char ** line_words, int num_words) 
+/******************************************************************************
+ *  Function:  parse                                                          *
+ *  Parameters: line_words (list of words split), num_words (number of words) *
+ *  Returns:   nothing                                                        *
+ *  Description: Will parse each line of text entered by user                 *
+ *****************************************************************************/
+
+void parse(char ** line_words, int num_words)
 {
     // char ** line_words: The entire string of commands
 
@@ -57,55 +77,47 @@ void parse(char ** line_words, int num_words)
 
     // array of commands
     struct command commands[100];
-    
+
     int i = 0;
     // Go through all the 'tokens'
     for (; i < num_words; i++) {
         // Capturing the 'token'
         char * w = line_words[i];
 
-        // If it sees a redirect we will capture the 
-        // entire command. 
+        // If it sees a redirect we will capture the entire command.
         if (is_arg_delim(w)) {
             // char ** temp = (char **) malloc(sizeof(command_len + 1));
-            char ** temp = (char **) malloc(((command_len + 1) * sizeof(char *))); 
+            char ** temp = (char **) malloc(((command_len + 1) * sizeof(char *)));
             slicearray(temp, line_words, i - command_len, i - 1);
             // printf("\n\ntemp: %s\n\n", temp[command_len]);
             commands[num_commands].command_length = command_len;
             commands[num_commands].command_string = temp;
             commands[num_commands].redirection = w;
-       
+
             num_commands++;
             command_len = 0;
         }
-        // if its not a delimiter (<, >, ...) 
+        // if its not a delimiter (<, >, ...)
         else {
             command_len++;
         }
-        
     }
     // i at this point is at the end of the array (out of bounds)
     // needs to be adjusted back to the end of the array (in bounds)
     i--; // need to back i up
 
-    char ** temp = (char **) malloc(((command_len + 1) * sizeof(char *))); 
-    
+    char ** temp = (char **) malloc(((command_len + 1) * sizeof(char *)));
     slicearray(temp, line_words, i - command_len + 1, i);
-   
-    
+
     commands[num_commands].command_string = temp;
     commands[num_commands].command_length = command_len;
     commands[num_commands].redirection = NULL;
-    
+
     num_commands++;
-   
-
-
-
 
     if (num_commands == 0) {
         printf("Please enter a command\n");
-    } 
+    }
     else {
 
         int num_pipes = num_commands - 1;
@@ -123,7 +135,6 @@ void parse(char ** line_words, int num_words)
             int saved;
             int pfd;
 
-            
             bool WRITE_TO_FILE = false;
             bool APPEND_TO_FILE = false;
             bool CREAT_OVEWRIT_FILE = false;
@@ -137,17 +148,16 @@ void parse(char ** line_words, int num_words)
 
             if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, ">") == 0) { READ_IN_AND_APPEND = true; }
             else if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, ">>") == 0) { READ_IN_AND_WRITE = true; }
-            
+
             if (WRITE_TO_FILE) {
                 fflush(stdout);
                 saved = dup(1);
-                // Check to make sure user didnt enter
-                // command > 
+                // Check to make sure user didnt enter the command ">"
                 if (commands[j+1].command_string[0] == NULL) {
                     printf("Expecting file for redirect > <file>\n");
                     break;
                 }
-                // Someone entered a pipe in the middle of 
+                // Someone entered a pipe in the middle of
                 // their command sequence like...
                 // command1 | command 2 > file | command3
                 if (j != num_commands - 2) {
@@ -160,11 +170,11 @@ void parse(char ** line_words, int num_words)
                 else if (APPEND_TO_FILE) {
                     pfd = open(commands[j+1].command_string[0], O_WRONLY | O_APPEND, 0777);
                 }
-                
+
                 dup2(pfd, 1);
                 close(pfd);
 
-            } 
+            }
             else if (READ_IN_FR_FILE) {
                 printf("FILE REDIRECTION <\n");
                 fflush(stdin);
@@ -177,10 +187,6 @@ void parse(char ** line_words, int num_words)
                     printf("ERR <filename>\n");
                     break;
                 }
-
-                // if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, ">") == 0) {
-                //     READ_IN_AND_APPEND = true;
-                // }
 
                 pfd = open(commands[j+1].command_string[0], O_RDONLY);
                 dup2(pfd, 0);
@@ -197,7 +203,7 @@ void parse(char ** line_words, int num_words)
                     }
                     else if (j == num_commands - 1) {
                         dup2(pfds[j - 1][0], 0); // read
-                    } 
+                    }
                     // if you are on the last command...
                     // still need to read from prev
                     // pipes
@@ -248,7 +254,7 @@ void parse(char ** line_words, int num_words)
                 dup2(saved, 1);
                 close(saved);
                 // This should kick us out of the for loop
-                 j++; // increment j past ( j < num_commands )
+                j++; // increment j past ( j < num_commands )
             }
             else if (READ_IN_FR_FILE) {
                 fflush(stdin);
@@ -262,14 +268,12 @@ void parse(char ** line_words, int num_words)
                     j += 2;
                 }
                 else {
-                    j++; 
+                    j++;
                 }
-                
-
 
             }
         }
-        //  Close parent pipes
+        //  Close parent pipe fds
         for (int y = 3; y < num_pipe_ends; y++) {
             close(y);
         }
@@ -304,11 +308,10 @@ void slicearray(char ** dest, char * source[], int from, int to) {
     // https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
     int j = 0;
     for (; from <= to; from++, j++) {
-        // strdup actually makes a copy of the string and 
+        // strdup actually makes a copy of the string and
         // allocates memory from the heap.
-        
+
         dest[j] = strdup(source[from]);
     }
     dest[j] = NULL;
 }
-
