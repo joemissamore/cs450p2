@@ -128,10 +128,15 @@ void parse(char ** line_words, int num_words)
             bool APPEND_TO_FILE = false;
             bool CREAT_OVEWRIT_FILE = false;
             bool READ_IN_FR_FILE = false;
+            bool READ_IN_AND_APPEND = false;
+            bool READ_IN_AND_WRITE = false;
 
             if (commands[j].redirection != NULL && strcmp(commands[j].redirection, ">") == 0) { WRITE_TO_FILE = true; CREAT_OVEWRIT_FILE = true; }
             else if (commands[j].redirection != NULL && strcmp(commands[j].redirection, ">>") == 0) { WRITE_TO_FILE = true; APPEND_TO_FILE = true; }
             else if (commands[j].redirection != NULL && strcmp(commands[j].redirection, "<") == 0) { READ_IN_FR_FILE = true; }
+
+            if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, ">") == 0) { READ_IN_AND_APPEND = true; }
+            else if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, ">>") == 0) { READ_IN_AND_WRITE = true; }
             
             if (WRITE_TO_FILE) {
                 fflush(stdout);
@@ -172,6 +177,11 @@ void parse(char ** line_words, int num_words)
                     printf("ERR <filename>\n");
                     break;
                 }
+
+                // if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, ">") == 0) {
+                //     READ_IN_AND_APPEND = true;
+                // }
+
                 pfd = open(commands[j+1].command_string[0], O_RDONLY);
                 dup2(pfd, 0);
                 close(pfd);
@@ -201,6 +211,26 @@ void parse(char ** line_words, int num_words)
                         printf("REDIRECTION < PIPE |\n");
                         dup2(pfds[1][1], 1); // write
                     }
+                    // wc -l < main.c > outputfile
+                    else if (READ_IN_AND_APPEND) {
+                        if (commands[j+2].command_string != NULL ) {
+                            fflush(stdout);
+                            pfd = open(commands[j+2].command_string[0], O_WRONLY | O_APPEND | O_CREAT, 0777);
+                            dup2(pfd, 1);
+                            fflush(stdout);
+                            close(pfd);
+                        }
+                    }
+                    // wc -l < main.c >> outputfile
+                    else if (READ_IN_AND_WRITE) {
+                        if (commands[j+2].command_string != NULL ) {
+                            fflush(stdout);
+                            pfd = open(commands[j+2].command_string[0], O_WRONLY | O_CREAT, 0777);
+                            dup2(pfd, 1);
+                            fflush(stdout);
+                            close(pfd);
+                        }
+                    }
                 }
 
                 for (int y = 3; y < num_pipe_ends; y++) {
@@ -228,7 +258,15 @@ void parse(char ** line_words, int num_words)
                 // TODO: This is going to have problems with commands that follow...
                 // grep someword < file.txt | wc
                 // not going to pick up on pipe
-                j++; 
+                if (READ_IN_AND_APPEND || READ_IN_AND_WRITE) {
+                    j += 2;
+                }
+                else {
+                    j++; 
+                }
+                
+
+
             }
         }
         //  Close parent pipes
