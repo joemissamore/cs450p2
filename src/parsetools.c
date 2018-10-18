@@ -116,6 +116,8 @@ void parse(char ** line_words, int num_words)
             pipe(pfds[x]);
         }
 
+        bool NON_COMMAND = false;
+
         for (int j = 0; j < num_commands; j++) {
 
             int saved;
@@ -188,6 +190,12 @@ void parse(char ** line_words, int num_words)
                     // ls -la | grep file > writefile
                     else if (WRITE_TO_FILE && j == num_commands - 2) {
                         dup2(pfds[j - 1][0], 0); // read
+                    }
+                }
+                else if (READ_IN_FR_FILE) {
+                    if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, "|") == 0) {
+                        printf("REDIRECTION < PIPE |\n");
+                        dup2(pfds[j][1], 1); // write
                     }
                 }
                
