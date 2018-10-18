@@ -281,28 +281,17 @@ void parse(char ** line_words, int num_words)
     
 }
 
-void printCommandStruct(struct command com) {
-    for (int i = 0; i < com.command_length; i++) {
-        printf("%s\n", com.command_string[i]);
-    }
-    if (com.redirection != NULL) {
-        printf("redirection: %s\n", com.redirection);
-    }
-}
-
-void printArray(char * c[], int len) {
-    for (int i = 0; i < len; i++) {
-        printf("%s\n", c[i]);
-    }
-}
-
+/******************************************************************************
+ *  Function:  slicearray                                                      
+ *  Parameters: (char ** dest, char * source[], int from, int to)
+ *  Returns:   nothing                                                        
+ *  Description: Will copy a *new* slice of a char ** to the dest arg
+ *****************************************************************************/
 void slicearray(char ** dest, char * source[], int from, int to) {
-    // https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
     int j = 0;
     for (; from <= to; from++, j++) {
         // strdup actually makes a copy of the string and
         // allocates memory from the heap.
-
         dest[j] = strdup(source[from]);
     }
     dest[j] = NULL;
