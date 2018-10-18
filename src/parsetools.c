@@ -63,7 +63,7 @@ void parse(char ** line_words, int num_words)
     for (; i < num_words; i++) {
         // Capturing the 'token'
         char * w = line_words[i];
-        
+
         // If it sees a redirect we will capture the 
         // entire command. 
         if (is_arg_delim(w)) {
@@ -248,7 +248,7 @@ void parse(char ** line_words, int num_words)
                 dup2(saved, 1);
                 close(saved);
                 // This should kick us out of the for loop
-                j++; // increment j past ( j < num_commands )
+                 j++; // increment j past ( j < num_commands )
             }
             else if (READ_IN_FR_FILE) {
                 fflush(stdin);
@@ -306,9 +306,9 @@ void slicearray(char ** dest, char * source[], int from, int to) {
     for (; from <= to; from++, j++) {
         // strdup actually makes a copy of the string and 
         // allocates memory from the heap.
+        
         dest[j] = strdup(source[from]);
     }
     dest[j] = NULL;
 }
-
 

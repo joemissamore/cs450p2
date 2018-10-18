@@ -1,0 +1,2 @@
+This series of commands finds the most common word in "wcExample.cpp" and prints it along with the number of times
+that it has been repeated. Note that you will have to strip the quotes from the arguments that are quoted before passing them to exec.
