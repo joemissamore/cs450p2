@@ -29,7 +29,6 @@ int split_cmd_line(char* line, char** list_to_populate) {
     char* delimiters = " \t\n"; // whitespace
     int i = 0;
 
-    // char *strtok_r(char *str, const char *delim, char **saveptr);
     list_to_populate[0] = strtok_r(line, delimiters, &saveptr);
 
     while(list_to_populate[i] != NULL && i < MAX_LINE_WORDS - 1)  {
@@ -168,7 +167,7 @@ void parse(char ** line_words, int num_words)
             }
             // redirection: >
             if (CREAT_OVEWRIT_FILE) {
-                pfd = open(commands[j+1].command_string[0], O_WRONLY | O_CREAT, 0777);
+                pfd = open(commands[j+1].command_string[0], O_WRONLY | O_CREAT | O_TRUNC, 0777);
             }
             // redirection: >>
             else if (APPEND_TO_FILE) {
@@ -215,7 +214,6 @@ void parse(char ** line_words, int num_words)
             }
             else if (READ_IN_FR_FILE) {
                 if (commands[j+1].redirection != NULL && strcmp(commands[j+1].redirection, "|") == 0) {
-                    printf("REDIRECTION < PIPE |\n");
                     dup2(pfds[1][1], 1); // write
                 }
                 // wc -l < main.c > outputfile
@@ -228,11 +226,11 @@ void parse(char ** line_words, int num_words)
                         close(pfd);
                     }
                 }
-                // wc -l < main.c >> outputfile
+                // wc -l < main.c > outputfile
                 else if (READ_IN_AND_WRITE) {
                     if (commands[j+2].command_string != NULL ) {
                         fflush(stdout);
-                        pfd = open(commands[j+2].command_string[0], O_WRONLY | O_CREAT, 0777);
+                        pfd = open(commands[j+2].command_string[0], O_WRONLY | O_CREAT | O_TRUNC, 0777);
                         dup2(pfd, 1);
                         fflush(stdout);
                         close(pfd);
@@ -261,10 +259,8 @@ void parse(char ** line_words, int num_words)
             fflush(stdin);
             dup2(saved, 0);
             close(saved);
+            
             // Increment past file name
-            // TODO: This is going to have problems with commands that follow...
-            // grep someword < file.txt | wc
-            // not going to pick up on pipe
             if (READ_IN_AND_APPEND || READ_IN_AND_WRITE) {
                 j += 2;
             }
